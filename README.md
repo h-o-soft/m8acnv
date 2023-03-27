@@ -54,7 +54,7 @@ m8acnv -g image-file-path
 ### 減色モードの指定
 
 ```
-magcnv -mode (減色モード) mag-file-path
+m8acnv -mode (減色モード) mag-file-path
 ```
 
 減色モードを指定する事で、いくつかの形式で減色したものをM8Aファイルとして出力します。
