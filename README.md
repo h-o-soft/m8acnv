@@ -11,7 +11,7 @@ pip install git+https://github.com/h-o-soft/m8acnv
 ## Usage
 
 ```
-usage: m8acnv [-h] [-f] [-m {reduce,dither,edfs,retro}] [-g] [-p] [path [path ...]]
+usage: m8acnv [-h] [-f] [-m {reduce,dither,edfs,retro}] [-g] [-p] [-s RESIZE] [-S SATURATION] [path [path ...]]
 
 m8acnv M8A image converter Version 0.1.0 Copyright 2023 H.O SOFT Inc. / hex125(293)
 
@@ -25,6 +25,10 @@ optional arguments:
                         convert mode (default = reduce)
   -g, --gamma           fixed gamma (default = disable)
   -p, --png             output png file (default = disable)
+  -s RESIZE, --resize RESIZE
+                        resize image (ex. 320x240) (default = disable)
+  -S SATURATION, --saturation SATURATION
+                        saturation (effective only in retro mode / default = None)
 ```
 
 ### M8A形式への変換
@@ -43,6 +47,18 @@ m8acnv image-file-path output-file-path
 
 既に画像ファイルがある場合は上書きされませんので、上書きしたい場合はオプション「-f」をつけてください。
 
+### リサイズ
+
+```
+m8acnv -s 320x200 image-file-path
+```
+
+`-s` オプションに (横サイズ)x(縦サイズ) を指定する事で、画像をリサイズしてから変換します。
+
+アスペクト比に関わらず指定サイズになりますが、画像のアスペクト比は維持されます。
+
+また、縦、横ともに8の倍数である必要があります。
+
 ### ガンマ補正
 
 ```
@@ -54,7 +70,7 @@ m8acnv -g image-file-path
 ### 減色モードの指定
 
 ```
-m8acnv -mode (減色モード) mag-file-path
+m8acnv -m (減色モード) image-file-path
 ```
 
 減色モードを指定する事で、いくつかの形式で減色したものをM8Aファイルとして出力します。
@@ -69,6 +85,16 @@ m8acnv -mode (減色モード) mag-file-path
   * 誤差拡散法での変換を行います(error diffusion / Floyd & Steinberg)
 * retro
   * なんとなくレトロっぽい彩度高めのディザ変換を行います
+
+### 彩度の指定
+
+```
+m8acnv -S 2.0 image-file-path
+```
+
+減色モード「retro」の時のみ、画像の彩度を設定出来ます。
+
+デフォルト値は 2.0 になります。
 
 #### 減色の例
 * 元画像

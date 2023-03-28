@@ -18,10 +18,32 @@ class M8AImage:
         [255, 255, 255],
     ]
     counter = 0
+    saturation = 2.0
 
     def loadImage(self, filepath):
         self.image = Image.open(filepath).convert('RGB')
 
+    def resize_image_with_aspect_ratio(self, image, target_size, fill_color=(0, 0, 0)):
+        width, height = image.size
+        target_width, target_height = target_size
+
+        # アスペクト比を維持したまま、指定のサイズ内に収まるようリサイズ
+        aspect_ratio = min(target_width / width, target_height / height)
+        new_width = int(width * aspect_ratio)
+        new_height = int(height * aspect_ratio)
+        resized_image = image.resize((new_width, new_height), Image.ANTIALIAS)
+
+        # 画像範囲外の部分を黒(指定色)にしておく
+        padded_image = Image.new('RGB', target_size, fill_color)
+        x_offset = (target_width - new_width) // 2
+        y_offset = (target_height - new_height) // 2
+        padded_image.paste(resized_image, (x_offset, y_offset))
+
+        return padded_image
+
+
+    def resize(self, width, height):
+        self.image = self.resize_image_with_aspect_ratio(self.image, (width, height))
 
     def fix_gamma(self, image):
         width, height = image.size
@@ -217,7 +239,7 @@ class M8AImage:
     def convert_retro(self, image, palette):
         input_image = image.convert("RGB")
         contrast_image = self.sigmoidal_contrast(input_image, -8, 0.5)
-        modulated_image = ImageEnhance.Color(contrast_image).enhance(2.0)
+        modulated_image = ImageEnhance.Color(contrast_image).enhance(self.saturation)
         dithered_image = self.ordered_dithering(modulated_image, 9)
 
         pal_img = Image.new('P', (16, 16))
@@ -329,11 +351,11 @@ class M8AImage:
 
         if width % 8 != 0:
             print("Error: width must be a multiple of 8")
-            return
+            return True
 
         if height % 8 != 0:
             print("Error: height must be a multiple of 8")
-            return
+            return True
 
         if gamma:
             self.fix_gamma(self.image)
@@ -348,17 +370,29 @@ class M8AImage:
             image = self.reduce8(self.image)
 
         self.output_m8a(path, image, out_png)
-        return
+        return False
 
 class M8AConverter:
     paths = []
     image = M8AImage()
     force_write = False
+    saturation = 2.0
 
     def __init__(self, paths):
         self.paths = paths
 
-    def exec(self, mode, gamma, out_png):
+    def load(self, path):
+        # from_pathが存在しない場合はエラーを表示して戻る
+        if not os.path.exists(path):
+            print("file not found. " + path)
+            return
+
+        self.image.loadImage(path)
+
+    def resize(self, width, height):
+        self.image.resize(width, height)
+
+    def convert(self, mode, gamma, out_png):
         if self.paths == None or len(self.paths) == 0:
             return True
         
@@ -379,10 +413,15 @@ class M8AConverter:
             print("file not found. " + from_path)
             return
 
-        self.image.loadImage(from_path)
-        self.image.saveM8A(mode, gamma, out_png, to_path)
+        # 事前にloadしておく事
+        # self.image.loadImage(from_path)
+        self.image.saturation = self.saturation
+        if not self.image.saveM8A(mode, gamma, out_png, to_path):
+            print("convert..." + from_path + " to " + to_path )
 
-        print("convert..." + from_path + " to " + to_path )
+def parse_size(input_str):
+    width, height = map(int, input_str.split('x'))
+    return width, height
 
 def main():
     parser = argparse.ArgumentParser(description='m8acnv M8A image converter Version 0.1.0 Copyright 2023 H.O SOFT Inc. / hex125(293)')
@@ -391,15 +430,31 @@ def main():
     parser.add_argument('-m', '--mode', choices=['reduce','dither','edfs','retro'], help='convert mode (default = reduce)', default='reduce')
     parser.add_argument('-g', '--gamma', help='fixed gamma (default = disable)', action='store_true')
     parser.add_argument('-p', '--png', help='output png file (default = disable)', action='store_true')
+    parser.add_argument('-s', '--resize', type=parse_size, required=False, default = None, help='resize image (ex. 320x240) (default = disable)')
+    parser.add_argument('-S', '--saturation', type=float, required=False, default = None, help='saturation (effective only in retro mode / default = None)')
     parser.add_argument('path', help='file path(s)', nargs="*")
 
     args = parser.parse_args()
 
     paths = args.path
 
+    if len(paths) == 0:
+        parser.print_help()
+        exit()
+
     m8aconv = M8AConverter(paths)
     m8aconv.force_write = args.force
-    if m8aconv.exec(args.mode, args.gamma, args.png):
+
+    m8aconv.load(paths[0])
+
+    if args.resize != None:
+        x,y = args.resize
+        m8aconv.resize(x, y)
+    
+    if args.saturation != None:
+        m8aconv.saturation = args.saturation
+
+    if m8aconv.convert(args.mode, args.gamma, args.png):
         parser.print_help()
         exit()
 
