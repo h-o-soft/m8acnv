@@ -85,6 +85,7 @@ m8acnv -m (減色モード) image-file-path
   * 誤差拡散法での変換を行います(error diffusion / Floyd & Steinberg)
 * retro
   * なんとなくレトロっぽい彩度高めのディザ変換を行います
+  * デイリーポータルZの記事「[レトロPCゲームみたいな写真が撮りたい](https://dailyportalz.jp/kiji/retro_PC_game-mitaina-shashin)」の変換を参考にしています(ありがとうございます)
 
 ### 彩度の指定
 
@@ -118,6 +119,8 @@ m8acnv -S 2.0 image-file-path
 
 M8Aの変換、及び、reduce、dither、edfsの変換については、 hex125(293) 氏のHSPのコードを元にして実装しました。ありがとうございます。
 
+retro変換については斎藤公輔（NEKOPLA）氏によるImageMagickのオプションを元に実装しました。ありがとうございます。
+
 ## Author
 * OGINO Hiroshi
 * H.O SOFT Inc.
@@ -125,3 +128,4 @@ M8Aの変換、及び、reduce、dither、edfsの変換については、 hex125
 
 ## License
 "m8acnv" is under [MIT license](LICENSE)
+
