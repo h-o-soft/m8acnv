@@ -78,9 +78,9 @@ class M8AImage:
     def od4x4(self, image):
         width, height = image.size
         if width % 4 != 0:
-            return
+            raise ValueError("Error: width must be a multiple of 4 ( dither )")
         elif height % 4 != 0:
-            return
+            raise ValueError("Error: height must be a multiple of 4 ( dither )")
 
         output_image = image.copy()
 
@@ -225,7 +225,7 @@ class M8AImage:
             [16, 8, 14, 6]
         ]
         if d >= vrange:
-            print("Error: dither table range >= vrange")
+            raise ValueError("Error: dither table range >= vrange")
             return
         w = len(tbl[0])
         h = len(tbl)
@@ -258,13 +258,6 @@ class M8AImage:
 
     def output_m8a(self, filename, image, out_png = False):
         width, height = image.size
-
-        if width % 8 != 0:
-            # print("横方向ドット数が8の倍数ではありません。処理を中止します。")
-            return
-        if height % 8 != 0:
-            # print("縦方向ドット数が8の倍数ではありません。処理を中止しますか？。")
-            return
 
         image = self.reduce8(image)
         self.counter = 0
@@ -350,12 +343,7 @@ class M8AImage:
         width, height = self.image.size
 
         if width % 8 != 0:
-            print("Error: width must be a multiple of 8")
-            return True
-
-        if height % 8 != 0:
-            print("Error: height must be a multiple of 8")
-            return True
+            raise ValueError("Error: width must be a multiple of 8")
 
         if gamma:
             self.fix_gamma(self.image)
@@ -384,8 +372,7 @@ class M8AConverter:
     def load(self, path):
         # from_pathが存在しない場合はエラーを表示して戻る
         if not os.path.exists(path):
-            print("file not found. " + path)
-            return
+            raise FileNotFoundError("file not found. " + path)
 
         self.image.loadImage(path)
 
@@ -405,13 +392,12 @@ class M8AConverter:
             to_path = os.path.splitext(from_path)[0] + '.m8a'
 
         if os.path.exists(to_path) and not self.force_write:
-            print("file already exists. " + to_path)
+            raise ValueError("file already exists. " + to_path)
             return
 
         # from_pathが存在しない場合はエラーを表示して戻る
         if not os.path.exists(from_path):
-            print("file not found. " + from_path)
-            return
+            raise FileNotFoundError("file not found. " + from_path)
 
         # 事前にloadしておく事
         # self.image.loadImage(from_path)
@@ -445,18 +431,21 @@ def main():
     m8aconv = M8AConverter(paths)
     m8aconv.force_write = args.force
 
-    m8aconv.load(paths[0])
+    try:
+        m8aconv.load(paths[0])
 
-    if args.resize != None:
-        x,y = args.resize
-        m8aconv.resize(x, y)
+        if args.resize != None:
+            x,y = args.resize
+            m8aconv.resize(x, y)
     
-    if args.saturation != None:
-        m8aconv.saturation = args.saturation
+        if args.saturation != None:
+            m8aconv.saturation = args.saturation
 
-    if m8aconv.convert(args.mode, args.gamma, args.png):
-        parser.print_help()
-        exit()
+        if m8aconv.convert(args.mode, args.gamma, args.png):
+            parser.print_help()
+            exit()
+    except Exception as e:
+        print(e)
 
 if __name__=='__main__':
     main()
